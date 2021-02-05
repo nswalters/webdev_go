@@ -4,37 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"webdev_go/views"
+	"webdev_go/controllers"
 
 	"github.com/gorilla/mux"
 )
-
-var (
-	homeView    *views.View
-	contactView *views.View
-	faqView     *views.View
-	signupView  *views.View
-)
-
-func home(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	must(homeView.Render(w, nil))
-}
-
-func contact(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	must(contactView.Render(w, nil))
-}
-
-func faq(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	must(faqView.Render(w, nil))
-}
-
-func signup(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	must(signupView.Render(w, nil))
-}
 
 func page404(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
@@ -48,18 +21,22 @@ func must(err error) {
 }
 
 func main() {
-	homeView = views.NewView("bootstrap", "views/home.gohtml")
-	contactView = views.NewView("bootstrap", "views/contact.gohtml")
-	faqView = views.NewView("bootstrap", "views/faq.gohtml")
-	signupView = views.NewView("bootstrap", "views/signup.gohtml")
+	staticC := controllers.NewStatic()
+	usersC := controllers.NewUsers()
 
 	var h http.Handler = http.HandlerFunc(page404)
 	r := mux.NewRouter()
 	r.NotFoundHandler = h
 
-	r.HandleFunc("/", home)
-	r.HandleFunc("/contact", contact)
-	r.HandleFunc("/faq", faq)
-	r.HandleFunc("/signup", signup)
+	// Relatively static pages
+	r.Handle("/", staticC.Home).Methods("GET")
+	r.Handle("/contact", staticC.Contact).Methods("GET")
+
+	// =v=v=v= Routed pages =v=v=v=
+
+	// Signing up a user
+	r.HandleFunc("/signup", usersC.New).Methods("GET")
+	r.HandleFunc("/signup", usersC.Create).Methods("POST")
+
 	http.ListenAndServe(":3000", r)
 }
