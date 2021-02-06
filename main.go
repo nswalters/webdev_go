@@ -5,28 +5,38 @@ import (
 	"net/http"
 
 	"webdev_go/controllers"
+	"webdev_go/models"
 
 	"github.com/gorilla/mux"
 )
 
-func page404(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, "404 NOT FOUND")
-}
+const (
+	host   = "localhost"
+	port   = 5432
+	user   = "postgres"
+	dbname = "db"
+)
 
-func must(err error) {
+func main() {
+
+	// Create a DB connection string and then use it to
+	// create our model services
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
+		host, port, user, dbname)
+
+	us, err := models.NewUserService(psqlInfo)
 	if err != nil {
 		panic(err)
 	}
-}
+	defer us.Close()
+	us.AutoMigrate()
 
-func main() {
+	// =v=v=v= Controllers and Routing =v=v=v=
+
 	staticC := controllers.NewStatic()
-	usersC := controllers.NewUsers()
+	usersC := controllers.NewUsers(us)
 
-	var h http.Handler = http.HandlerFunc(page404)
 	r := mux.NewRouter()
-	r.NotFoundHandler = h
 
 	// Relatively static pages
 	r.Handle("/", staticC.Home).Methods("GET")
